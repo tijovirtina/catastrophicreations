@@ -1,180 +1,173 @@
-<div class="page-width">
-  {% if section.settings.title != blank %}
-    <header class="section-header text-center">
-      <h2>{{ section.settings.title | escape }}</h2>
-    </header>
-  {% endif %}
+<link rel="stylesheet" href="{{ 'component-slider.css' | asset_url }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ 'component-card.css' | asset_url }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ 'component-article-card.css' | asset_url }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ 'section-featured-blog.css' | asset_url }}" media="print" onload="this.media='all'">
 
-  {%- assign blog = blogs[section.settings.blog] -%}
+<noscript>{{ 'component-slider.css' | asset_url | stylesheet_tag }}</noscript>
+<noscript>{{ 'component-card.css' | asset_url | stylesheet_tag }}</noscript>
+<noscript>{{ 'component-article-card.css' | asset_url | stylesheet_tag }}</noscript>
 
-  {% unless blog.articles_count == 0 %}
-    <div class="grid grid--uniform grid--blog">
-      {% for article in blog.articles limit: section.settings.post_limit %}
-        <div class="grid__item medium-up--one-third">
-          {% if article.image %}
-            <a href="{{ article.url }}" class="article__grid-image">
-              {{ article | img_url: '345x' | img_tag: article.title }}
-            </a>
-          {% endif %}
+{{ 'section-featured-blog.css' | asset_url | stylesheet_tag }}
 
-          <div class="article__grid-meta{% if article.image %} article__grid-meta--has-image{% endif %}">
-            <h2 class="h3 article__title">
-              <a href="{{ article.url }}">{{ article.title }}</a>
-            </h2>
+<div class="blog{% if section.settings.soft_background %} background-secondary{% endif %}{% if section.settings.heading == blank %} no-heading{% endif %}">
+  <div class="page-width-desktop">
+    <div class="title-wrapper-with-link{% if section.settings.heading == blank %} title-wrapper-with-link--no-heading{% endif %} title-wrapper--self-padded-tablet-down">
+      <h2 class="blog__title">{{ section.settings.heading | escape }}</h2>
 
-            {% if section.settings.blog_show_author %}
-              <span class="article__author">{{ 'blogs.article.by_author' | t: author: article.author }}</span>
-            {% endif %}
-
-            {% if section.settings.blog_show_date %}
-              <span class="article__date">
-                {{ article.published_at | time_tag: format: 'month_day_year' }}
-              </span>
-            {% endif %}
-
-            <div class="rte article__grid-excerpt">
-              {% if article.excerpt.size > 0 %}
-                {{ article.excerpt }}
-              {% else %}
-                {{ article.content | strip_html | truncate: 150 }}
-              {% endif %}
+      {%- if section.settings.blog != blank and section.settings.show_view_all and section.settings.post_limit < section.settings.blog.articles_count -%}
+        <a href="{{ section.settings.blog.url }}"
+          class="link underlined-link large-up-hide"
+        >
+          {{ 'sections.featured_blog.view_all' | t }}
+        </a>
+      {%- endif -%}
+    </div>
+    {%- liquid
+      if section.settings.post_limit <= section.settings.blog.articles_count
+        assign posts_exceed_limit = true
+      endif
+    -%}
+    {%- if section.settings.blog != blank and section.settings.blog.articles_count > 0 -%}
+      <slider-component class="slider-mobile-gutter">
+        <ul id="Slider-{{ section.id }}"
+          class="blog__posts articles-wrapper grid grid--peek grid--2-col-tablet grid--3-col-desktop slider slider--tablet{% if posts_exceed_limit %} blog__posts--{{ section.settings.post_limit }}-items{% else %} blog__posts--{{ section.settings.blog.articles_count }}-items{% endif %}"
+          role="list"
+        >
+          {%- for article in section.settings.blog.articles limit: section.settings.post_limit -%}
+            <li class="blog__post grid__item article slider__slide slider__slide--full-width">
+              {% render 'article-card', blog: section.settings.blog, article: article, show_image: section.settings.show_image %}
+            </li>
+          {%- endfor -%}
+        </ul>
+        {%- if posts_exceed_limit -%}
+          <div class="slider-buttons no-js-hidden{% if section.settings.post_limit < 3 %} medium-hide{% endif %}{% if section.settings.post_limit < 2 %} small-hide{% endif %}">
+            <div class="slider-counter caption">
+              <span class="slider-counter--current">1</span>
+              <span aria-hidden="true"> / </span>
+              <span class="visually-hidden">{{ 'accessibility.of' | t }}</span>
+              <span class="slider-counter--total">{{ section.settings.post_limit }}</span>
             </div>
-
-            {% if article.tags.size > 0 %}
-              <div class="article__tags rte">
-                {% for tag in article.tags %}
-                  <a href="{{ blog.url }}/tagged/{{ tag | handle }}" class="article__grid-tag">{{ tag }}</a>
-                {% endfor %}
-              </div>
-            {% endif %}
-
-            <ul class="list--inline article__meta-buttons">
-              <li>
-                <a href="{{ article.url }}" class="btn btn--secondary btn--small">
-                  {{ 'blogs.article.read_more' | t }}
-                </a>
-              </li>
-
-              {% if blog.comments_enabled? and article.comments_count > 0 %}
-                <li>
-                  <a href="{{ article.url }}#comments" class="btn btn--small btn--link">
-                    {{ 'blogs.comments.comments_with_count' | t: count: article.comments_count }}
-                  </a>
-                </li>
-              {% endif %}
-            </ul>
+            <button type="button" class="slider-button slider-button--prev" name="previous" aria-label="{{ 'accessibility.previous_slide' | t }}">{% render 'icon-caret' %}</button>
+            <button type="button" class="slider-button slider-button--next" name="next" aria-label="{{ 'accessibility.next_slide' | t }}">{% render 'icon-caret' %}</button>
           </div>
+        {%- endif -%}
+      </slider-component>
+
+      {%- if section.settings.show_view_all and section.settings.post_limit < section.settings.blog.articles_count -%}
+        <div class="blog__view-all center small-hide medium-hide">
+          <a href="{{ section.settings.blog.url }}" class="blog__button button">
+            {{ 'sections.featured_blog.view_all' | t }}
+          </a>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="grid grid--uniform grid--blog">
-      {% for i in (1..section.settings.post_limit) %}
-        <div class="grid__item medium-up--one-third">
-          <div class="article__grid-meta">
-            <h2 class="h3 article__title">
-              <a href="#">{{ 'homepage.onboarding.blog_title' | t }}</a>
-            </h2>
-
-            {% if section.settings.blog_show_author %}
-              <span class="article__author">{{ 'homepage.onboarding.blog_author' | t }}</span>
-            {% endif %}
-
-            <div class="rte article__grid-excerpt">
-              {{ 'homepage.onboarding.blog_excerpt' | t }}
-            </div>
-
-            <ul class="list--inline article__meta-buttons">
-              <li>
-                <a href="{{ article.url }}" class="btn btn--secondary btn--small">
-                  {{ 'blogs.article.read_more' | t }}
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% endunless %}
-
-  {% if section.settings.show_view_all %}
-    <hr class="hr--invisible"></hr>
-    <div class="text-center">
-      <a href="{{ blog.url }}" class="btn">
-        {{ 'blogs.article.view_all' | t }}
-      </a>
-    </div>
-  {% endif %}
+      {%- endif -%}
+    {%- else -%}
+      <div class="placeholder">
+        <h2>
+          {{ 'sections.featured_blog.onboarding_title' | t }}
+        </h2>
+        <p class="rte-width">
+          {{ 'sections.featured_blog.onboarding_content' | t }}
+        </p>
+      </div>
+    {%- endif -%}
+  </div>
 </div>
 
 {% schema %}
-  {
-    "name": "Blog posts",
-    "class": "index-section",
-    "settings": [
-      {
-        "type": "text",
-        "id": "title",
-        "label": "Heading",
-        "default": "Blog posts"
-      },
-      {
-        "id": "blog",
-        "type": "blog",
-        "label": "Blog"
-      },
-      {
-        "type": "select",
-        "id": "post_limit",
-        "label": "Posts",
-        "default": "3",
-        "options": [
-          {
-            "value": "3",
-            "label": "3"
-          },
-          {
-            "value": "6",
-            "label": "6"
-          },
-          {
-            "value": "9",
-            "label": "9"
-          },
-          {
-            "value": "12",
-            "label": "12"
-          }
-        ]
-      },
-      {
-        "type": "checkbox",
-        "id": "blog_show_author",
-        "label": "Show author",
-        "default": false
-      },
-      {
-        "type": "checkbox",
-        "id": "blog_show_date",
-        "label": "Show date",
-        "default": true
-      },
-      {
-        "type": "checkbox",
-        "id": "show_view_all",
-        "label": "Show 'View all' button",
-        "default": false
-      }
-    ],
-    "presets": [
-      {
-        "name": "Blog posts",
-        "category": "Blog",
-        "settings": {
-          "blog": "News",
-          "post_limit": "3"
+{
+  "name": "t:sections.featured-blog.name",
+  "tag": "section",
+  "class": "spaced-section spaced-section--full-width",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "default": "Blog posts",
+      "label": "t:sections.featured-blog.settings.heading.label"
+    },
+    {
+      "type": "blog",
+      "id": "blog",
+      "label": "t:sections.featured-blog.settings.blog.label"
+    },
+    {
+      "type": "range",
+      "id": "post_limit",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 3,
+      "label": "t:sections.featured-blog.settings.post_limit.label"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_view_all",
+      "default": true,
+      "label": "t:sections.featured-blog.settings.show_view_all.label"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_image",
+      "default": true,
+      "label": "t:sections.featured-blog.settings.show_image.label",
+      "info": "t:sections.featured-blog.settings.show_image.info"
+    },
+    {
+      "type": "checkbox",
+      "id": "soft_background",
+      "default": false,
+      "label": "t:sections.featured-blog.settings.soft_background.label"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "title",
+      "name": "t:sections.featured-blog.blocks.title.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_date",
+          "default": true,
+          "label": "t:sections.featured-blog.blocks.title.settings.show_date.label"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_author",
+          "default": false,
+          "label": "t:sections.featured-blog.blocks.title.settings.show_author.label"
         }
-      }
-    ]
-  }
+      ]
+    },
+    {
+      "type": "summary",
+      "name": "t:sections.featured-blog.blocks.summary.name",
+      "limit": 1
+    },
+    {
+      "type": "link",
+      "name": "t:sections.featured-blog.blocks.link.name",
+      "limit": 1
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.featured-blog.presets.name",
+      "settings": {
+        "blog": "News"
+      },
+      "blocks": [
+        {
+          "type": "title"
+        },
+        {
+          "type": "summary"
+        },
+        {
+          "type": "link"
+        }
+      ]
+    }
+  ]
+}
 {% endschema %}
